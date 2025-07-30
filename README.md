@@ -8,7 +8,7 @@ An Elasticsearch MCP (Model Context Protocol) server built on [github.com/mark3l
 
 ## Features
 
-- 🔗 **Multi-Protocol Support**: Supports both stdio and HTTP protocols
+- 🔗 **Multi-Protocol Support**: Supports both stdio and Streamable HTTP protocols
 - 📊 **Multi-Version Compatibility**: Compatible with Elasticsearch 7, 8, and 9
 - ⚙️ **Environment Configuration**: Configure via environment variables
 - 🔧 **Rich Toolset**: Complete set of Elasticsearch operation tools
@@ -93,8 +93,8 @@ All configuration is done via environment variables:
 | `MCP_SERVER_NAME` | Server name for MCP | `Elasticsearch MCP Server` |
 | `MCP_SERVER_VERSION` | Server version | `1.0.0` |
 | `MCP_PROTOCOL` | Protocol to use (`stdio` or `http`) | `stdio` |
-| `MCP_ADDRESS` | HTTP server address (HTTP mode only) | `localhost` |
-| `MCP_PORT` | HTTP server port (HTTP mode only) | `8080` |
+| `MCP_ADDRESS` | Streamable HTTP server address (HTTP mode only) | `localhost` |
+| `MCP_PORT` | Streamable HTTP server port (HTTP mode only) | `8080` |
 
 ## Usage Examples
 
@@ -105,7 +105,7 @@ export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
 
-### HTTP Mode
+### Streamable HTTP Mode
 ```bash
 export ES_ADDRESSES=http://localhost:9200
 export MCP_PROTOCOL=http

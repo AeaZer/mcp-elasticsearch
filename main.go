@@ -1,6 +1,6 @@
 // Package main implements the Elasticsearch MCP (Model Context Protocol) server
 // that provides an interface for interacting with Elasticsearch clusters
-// through both stdio and HTTP protocols.
+// through both stdio and Streamable HTTP protocols.
 package main
 
 import (

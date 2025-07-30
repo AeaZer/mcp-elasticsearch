@@ -1,5 +1,5 @@
 // Package server implements the MCP server functionality for Elasticsearch integration.
-// It provides both stdio and HTTP protocol support for the Model Context Protocol.
+// It provides both stdio and Streamable HTTP protocol support for the Model Context Protocol.
 package server
 
 import (

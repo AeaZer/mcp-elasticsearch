@@ -8,7 +8,7 @@
 
 ## 功能特性
 
-- 🔗 **多协议支持**: 支持 stdio 和 HTTP 协议
+- 🔗 **多协议支持**: 支持 stdio 和 Streamable HTTP 协议
 - 📊 **多版本兼容**: 兼容 Elasticsearch 7、8、9 版本
 - ⚙️ **环境变量配置**: 通过环境变量进行配置
 - 🔧 **丰富工具集**: 完整的 Elasticsearch 操作工具
@@ -93,8 +93,8 @@ export MCP_PROTOCOL=stdio
 | `MCP_SERVER_NAME` | MCP 服务器名称 | `Elasticsearch MCP Server` |
 | `MCP_SERVER_VERSION` | 服务器版本 | `1.0.0` |
 | `MCP_PROTOCOL` | 使用的协议（`stdio` 或 `http`） | `stdio` |
-| `MCP_ADDRESS` | HTTP 服务器地址（仅 HTTP 模式） | `localhost` |
-| `MCP_PORT` | HTTP 服务器端口（仅 HTTP 模式） | `8080` |
+| `MCP_ADDRESS` | Streamable HTTP 服务器地址（仅 HTTP 模式） | `localhost` |
+| `MCP_PORT` | Streamable HTTP 服务器端口（仅 HTTP 模式） | `8080` |
 
 ## 使用示例
 
@@ -105,7 +105,7 @@ export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
 
-### HTTP 模式
+### Streamable HTTP 模式
 ```bash
 export ES_ADDRESSES=http://localhost:9200
 export MCP_PROTOCOL=http
