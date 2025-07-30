@@ -1,0 +1,36 @@
+# Executable files
+mcp-elasticsearch
+mcp-elasticsearch.exe
+main
+main.exe
+
+# Go build artifacts
+*.out
+*.test
+*.prof
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Dependencies
+vendor/
+
+# Test coverage files
+coverage.out
+coverage.html 
