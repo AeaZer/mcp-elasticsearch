@@ -40,24 +40,40 @@ An Elasticsearch MCP (Model Context Protocol) server built on [github.com/mark3l
 
 ## Quick Start
 
-### Using Docker (Recommended)
+Choose one of the following methods to run the Elasticsearch MCP server:
 
-```bash
-# Start Elasticsearch and MCP server
-docker-compose up -d
-
-# Or run just the MCP server
-docker run -e ES_ADDRESSES=http://localhost:9200 ghcr.io/aeazer/mcp-elasticsearch:latest
-```
-
-### Manual Installation
+### Method 1: Build Docker Image (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/AeaZer/mcp-elasticsearch.git
 cd mcp-elasticsearch
 
-# Build the application
+# Build Docker image
+docker build -t mcp-elasticsearch .
+
+# Run the container
+docker run -e ES_ADDRESSES=http://localhost:9200 -e ES_VERSION=8 mcp-elasticsearch
+```
+
+### Method 2: Use Pre-built Image (Coming Soon)
+
+```bash
+# This will be available when the image is published to a registry
+# docker run -e ES_ADDRESSES=http://localhost:9200 ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+*Note: Pre-built images are not yet available. Please use Method 1 or Method 3.*
+
+### Method 3: Compile from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/AeaZer/mcp-elasticsearch.git
+cd mcp-elasticsearch
+
+# Download dependencies and build
+go mod download
 go build -o mcp-elasticsearch main.go
 
 # Run with environment variables
@@ -122,21 +138,6 @@ export ES_VERSION=8
 ./mcp-elasticsearch
 ```
 
-## Docker Support
-
-### Build from Source
-```bash
-docker build -t mcp-elasticsearch .
-```
-
-### Run with Docker Compose
-```bash
-# Copy environment file
-cp env-example .env
-# Edit .env with your configuration
-# Start services
-docker-compose up -d
-```
 
 ## Development
 

@@ -40,24 +40,40 @@
 
 ## 快速开始
 
-### 使用 Docker（推荐）
+选择以下任一方式运行 Elasticsearch MCP 服务器：
 
-```bash
-# 启动 Elasticsearch 和 MCP 服务器
-docker-compose up -d
-
-# 或仅运行 MCP 服务器
-docker run -e ES_ADDRESSES=http://localhost:9200 ghcr.io/aeazer/mcp-elasticsearch:latest
-```
-
-### 手动安装
+### 方式一：构建 Docker 镜像（推荐）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/AeaZer/mcp-elasticsearch.git
 cd mcp-elasticsearch
 
-# 构建应用程序
+# 构建 Docker 镜像
+docker build -t mcp-elasticsearch .
+
+# 运行容器
+docker run -e ES_ADDRESSES=http://localhost:9200 -e ES_VERSION=8 mcp-elasticsearch
+```
+
+### 方式二：使用预构建镜像（即将推出）
+
+```bash
+# 当镜像发布到仓库后将可用
+# docker run -e ES_ADDRESSES=http://localhost:9200 ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+*注意：预构建镜像尚未发布。请使用方式一或方式三。*
+
+### 方式三：从源码编译
+
+```bash
+# 克隆仓库
+git clone https://github.com/AeaZer/mcp-elasticsearch.git
+cd mcp-elasticsearch
+
+# 下载依赖并构建
+go mod download
 go build -o mcp-elasticsearch main.go
 
 # 使用环境变量运行
@@ -122,21 +138,7 @@ export ES_VERSION=8
 ./mcp-elasticsearch
 ```
 
-## Docker 支持
 
-### 从源码构建
-```bash
-docker build -t mcp-elasticsearch .
-```
-
-### 使用 Docker Compose
-```bash
-# 复制环境文件
-cp env-example .env
-# 编辑 .env 配置文件
-# 启动服务
-docker-compose up -d
-```
 
 ## 开发
 
