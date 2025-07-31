@@ -9,7 +9,8 @@ import (
 	"fmt"
 
 	"github.com/AeaZer/mcp-elasticsearch/elasticsearch"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // ElasticsearchTools represents a collection of Elasticsearch-related MCP tools
@@ -24,45 +25,42 @@ func NewElasticsearchTools(client elasticsearch.Client) *ElasticsearchTools {
 	}
 }
 
-// GetTools returns all available Elasticsearch tools for the MCP server
-func (t *ElasticsearchTools) GetTools() []mcp.Tool {
+// GetTools returns all available Elasticsearch tools with their schemas
+func (et *ElasticsearchTools) GetTools() []mcp.Tool {
 	return []mcp.Tool{
-		// Cluster management tools
 		{
 			Name:        "es_cluster_info",
-			Description: "Get Elasticsearch cluster information including version and basic configuration",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Get cluster information and version details",
+			InputSchema: &jsonschema.Schema{
 				Type:       "object",
-				Properties: map[string]interface{}{},
+				Properties: map[string]*jsonschema.Schema{},
 			},
 		},
 		{
 			Name:        "es_cluster_health",
-			Description: "Get Elasticsearch cluster health status and statistics",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Get cluster health status and metrics",
+			InputSchema: &jsonschema.Schema{
 				Type:       "object",
-				Properties: map[string]interface{}{},
+				Properties: map[string]*jsonschema.Schema{},
 			},
 		},
-
-		// Index management tools
 		{
 			Name:        "es_index_create",
-			Description: "Create a new Elasticsearch index with optional settings and mappings",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Create a new index with optional settings and mappings",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index to create",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name to create",
 					},
-					"settings": map[string]interface{}{
-						"type":        "object",
-						"description": "Index settings (optional)",
+					"settings": {
+						Type:        "object",
+						Description: "Index settings (optional)",
 					},
-					"mappings": map[string]interface{}{
-						"type":        "object",
-						"description": "Index field mappings (optional)",
+					"mappings": {
+						Type:        "object",
+						Description: "Index mappings (optional)",
 					},
 				},
 				Required: []string{"index"},
@@ -70,13 +68,13 @@ func (t *ElasticsearchTools) GetTools() []mcp.Tool {
 		},
 		{
 			Name:        "es_index_delete",
-			Description: "Delete an existing Elasticsearch index",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Delete an existing index",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index to delete",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name to delete",
 					},
 				},
 				Required: []string{"index"},
@@ -84,13 +82,13 @@ func (t *ElasticsearchTools) GetTools() []mcp.Tool {
 		},
 		{
 			Name:        "es_index_exists",
-			Description: "Check if an Elasticsearch index exists",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Check if an index exists",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index to check",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name to check",
 					},
 				},
 				Required: []string{"index"},
@@ -98,49 +96,47 @@ func (t *ElasticsearchTools) GetTools() []mcp.Tool {
 		},
 		{
 			Name:        "es_index_list",
-			Description: "List all Elasticsearch indices with their metadata",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "List all indices with metadata",
+			InputSchema: &jsonschema.Schema{
 				Type:       "object",
-				Properties: map[string]interface{}{},
+				Properties: map[string]*jsonschema.Schema{},
 			},
 		},
-
-		// Document management tools
 		{
 			Name:        "es_document_index",
-			Description: "Index a document in Elasticsearch with optional document ID",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Index a document with optional ID",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index to store the document",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name",
 					},
-					"id": map[string]interface{}{
-						"type":        "string",
-						"description": "Document ID (optional, will be auto-generated if not provided)",
+					"id": {
+						Type:        "string",
+						Description: "Document ID (optional)",
 					},
-					"document": map[string]interface{}{
-						"type":        "object",
-						"description": "Document content to index",
+					"body": {
+						Type:        "object",
+						Description: "Document body",
 					},
 				},
-				Required: []string{"index", "document"},
+				Required: []string{"index", "body"},
 			},
 		},
 		{
 			Name:        "es_document_get",
-			Description: "Retrieve a document from Elasticsearch by its ID",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Retrieve a document by ID",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index containing the document",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name",
 					},
-					"id": map[string]interface{}{
-						"type":        "string",
-						"description": "Document ID to retrieve",
+					"id": {
+						Type:        "string",
+						Description: "Document ID",
 					},
 				},
 				Required: []string{"index", "id"},
@@ -148,104 +144,95 @@ func (t *ElasticsearchTools) GetTools() []mcp.Tool {
 		},
 		{
 			Name:        "es_document_update",
-			Description: "Update an existing document in Elasticsearch",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Update an existing document",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index containing the document",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name",
 					},
-					"id": map[string]interface{}{
-						"type":        "string",
-						"description": "Document ID to update",
+					"id": {
+						Type:        "string",
+						Description: "Document ID",
 					},
-					"document": map[string]interface{}{
-						"type":        "object",
-						"description": "Updated document content or partial update",
+					"body": {
+						Type:        "object",
+						Description: "Update body with doc or script",
 					},
 				},
-				Required: []string{"index", "id", "document"},
+				Required: []string{"index", "id", "body"},
 			},
 		},
 		{
 			Name:        "es_document_delete",
-			Description: "Delete a document from Elasticsearch by its ID",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Delete a document by ID",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index containing the document",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name",
 					},
-					"id": map[string]interface{}{
-						"type":        "string",
-						"description": "Document ID to delete",
+					"id": {
+						Type:        "string",
+						Description: "Document ID",
 					},
 				},
 				Required: []string{"index", "id"},
 			},
 		},
-
-		// Search tools
 		{
 			Name:        "es_search",
-			Description: "Execute a search query against Elasticsearch with optional filters and sorting",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Execute search queries with filters and sorting",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"index": map[string]interface{}{
-						"type":        "string",
-						"description": "Name of the index to search (optional, searches all indices if not specified)",
+				Properties: map[string]*jsonschema.Schema{
+					"index": {
+						Type:        "string",
+						Description: "Index name (optional, searches all if not provided)",
 					},
-					"query": map[string]interface{}{
-						"type":        "object",
-						"description": "Elasticsearch query DSL",
+					"query": {
+						Type:        "object",
+						Description: "Search query",
 					},
-					"size": map[string]interface{}{
-						"type":        "integer",
-						"description": "Maximum number of results to return (default: 10)",
+					"size": {
+						Type:        "integer",
+						Description: "Number of results to return (default: 10)",
 					},
-					"from": map[string]interface{}{
-						"type":        "integer",
-						"description": "Number of results to skip for pagination (default: 0)",
+					"from": {
+						Type:        "integer",
+						Description: "Offset for pagination (default: 0)",
+					},
+					"sort": {
+						Type:        "array",
+						Description: "Sort specification (array of sort objects)",
+						Items: &jsonschema.Schema{
+							Type: "object",
+						},
+					},
+					"_source": {
+						Description: "Source filtering: boolean (true/false), array of field names, or object with includes/excludes",
+						OneOf: []*jsonschema.Schema{
+							{Type: "boolean"},
+							{Type: "array", Items: &jsonschema.Schema{Type: "string"}},
+							{Type: "object"},
+						},
 					},
 				},
-				Required: []string{"query"},
 			},
 		},
-
-		// Bulk operations
 		{
 			Name:        "es_bulk",
-			Description: "Execute bulk operations (index, update, delete) in a single request for better performance",
-			InputSchema: mcp.ToolInputSchema{
+			Description: "Execute multiple operations in a single request",
+			InputSchema: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]interface{}{
-					"operations": map[string]interface{}{
-						"type":        "array",
-						"description": "Array of bulk operations to execute",
-						"items": map[string]interface{}{
-							"type": "object",
-							"properties": map[string]interface{}{
-								"operation": map[string]interface{}{
-									"type":        "string",
-									"description": "Type of operation: index, update, delete",
-								},
-								"index": map[string]interface{}{
-									"type":        "string",
-									"description": "Target index name",
-								},
-								"id": map[string]interface{}{
-									"type":        "string",
-									"description": "Document ID (optional for index operation)",
-								},
-								"body": map[string]interface{}{
-									"type":        "object",
-									"description": "Document body for index/update operations",
-								},
-							},
-							"required": []string{"operation", "index"},
+				Properties: map[string]*jsonschema.Schema{
+					"operations": {
+						Type:        "array",
+						Description: "Array of bulk operations",
+						Items: &jsonschema.Schema{
+							Type: "object",
 						},
 					},
 				},
@@ -255,368 +242,357 @@ func (t *ElasticsearchTools) GetTools() []mcp.Tool {
 	}
 }
 
-// HandleTool processes MCP tool calls and routes them to the appropriate Elasticsearch operations
-func (t *ElasticsearchTools) HandleTool(ctx context.Context, toolName string, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	switch toolName {
-	case "es_cluster_info":
-		return t.handleClusterInfo(ctx)
-	case "es_cluster_health":
-		return t.handleClusterHealth(ctx)
-	case "es_index_create":
-		return t.handleIndexCreate(ctx, arguments)
-	case "es_index_delete":
-		return t.handleIndexDelete(ctx, arguments)
-	case "es_index_exists":
-		return t.handleIndexExists(ctx, arguments)
-	case "es_index_list":
-		return t.handleIndexList(ctx)
-	case "es_document_index":
-		return t.handleDocumentIndex(ctx, arguments)
-	case "es_document_get":
-		return t.handleDocumentGet(ctx, arguments)
-	case "es_document_update":
-		return t.handleDocumentUpdate(ctx, arguments)
-	case "es_document_delete":
-		return t.handleDocumentDelete(ctx, arguments)
-	case "es_search":
-		return t.handleSearch(ctx, arguments)
-	case "es_bulk":
-		return t.handleBulk(ctx, arguments)
-	default:
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.TextContent{
-					Type: "text",
-					Text: fmt.Sprintf("Unknown tool: %s", toolName),
-				},
-			},
-			IsError: true,
-		}, nil
-	}
-}
+// Helper functions to create standardized MCP results
 
-// Helper function to create error result
-func createErrorResult(message string) *mcp.CallToolResult {
-	return &mcp.CallToolResult{
+// createErrorResult creates a standardized error result
+func createErrorResult(message string) mcp.CallToolResult {
+	return mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: message,
+			&mcp.TextContent{
+				Text: fmt.Sprintf("Error: %s", message),
 			},
 		},
 		IsError: true,
 	}
 }
 
-// Helper function to create success result with structured content
-func createSuccessResult(text string, structuredContent interface{}) *mcp.CallToolResult {
-	return &mcp.CallToolResult{
+// createSuccessResult creates a standardized success result with structured data
+func createSuccessResult(text string, data interface{}) mcp.CallToolResult {
+	content := []mcp.Content{
+		&mcp.TextContent{
+			Text: text,
+		},
+	}
+
+	result := mcp.CallToolResult{
+		Content: content,
+		IsError: false,
+	}
+
+	if data != nil {
+		switch v := data.(type) {
+		case []interface{}:
+			result.StructuredContent = map[string]interface{}{
+				"data":  v,
+				"count": len(v),
+			}
+		case []string:
+			result.StructuredContent = map[string]interface{}{
+				"data":  v,
+				"count": len(v),
+			}
+		default:
+			result.StructuredContent = data
+		}
+	}
+
+	return result
+}
+
+// createSimpleSuccessResult creates a simple success result with only text
+func createSimpleSuccessResult(text string) mcp.CallToolResult {
+	return mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
+			&mcp.TextContent{
 				Text: text,
 			},
 		},
-		StructuredContent: structuredContent,
+		IsError: false,
 	}
 }
 
-// Helper function to create simple success result
-func createSimpleSuccessResult(text string) *mcp.CallToolResult {
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: text,
-			},
-		},
+// HandleTool handles MCP tool calls and routes them to appropriate handlers
+func (et *ElasticsearchTools) HandleTool(ctx context.Context, toolName string, arguments map[string]interface{}) mcp.CallToolResult {
+	switch toolName {
+	case "es_cluster_info":
+		return et.handleClusterInfo(ctx)
+	case "es_cluster_health":
+		return et.handleClusterHealth(ctx)
+	case "es_index_create":
+		return et.handleIndexCreate(ctx, arguments)
+	case "es_index_delete":
+		return et.handleIndexDelete(ctx, arguments)
+	case "es_index_exists":
+		return et.handleIndexExists(ctx, arguments)
+	case "es_index_list":
+		return et.handleIndexList(ctx)
+	case "es_document_index":
+		return et.handleDocumentIndex(ctx, arguments)
+	case "es_document_get":
+		return et.handleDocumentGet(ctx, arguments)
+	case "es_document_update":
+		return et.handleDocumentUpdate(ctx, arguments)
+	case "es_document_delete":
+		return et.handleDocumentDelete(ctx, arguments)
+	case "es_search":
+		return et.handleSearch(ctx, arguments)
+	case "es_bulk":
+		return et.handleBulk(ctx, arguments)
+	default:
+		return createErrorResult(fmt.Sprintf("Unknown tool: %s", toolName))
 	}
 }
 
-// Cluster information handlers
-
-func (t *ElasticsearchTools) handleClusterInfo(ctx context.Context) (*mcp.CallToolResult, error) {
-	info, err := t.client.Info(ctx)
+// Individual tool handlers
+func (et *ElasticsearchTools) handleClusterInfo(ctx context.Context) mcp.CallToolResult {
+	info, err := et.client.Info(ctx)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to get cluster info: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to get cluster info: %v", err))
 	}
-
-	response, err := json.MarshalIndent(info, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format cluster info: %v", err)), nil
-	}
-
-	return createSuccessResult(string(response), info), nil
+	return createSuccessResult("Cluster info retrieved successfully", info)
 }
 
-func (t *ElasticsearchTools) handleClusterHealth(ctx context.Context) (*mcp.CallToolResult, error) {
-	health, err := t.client.Health(ctx)
+func (et *ElasticsearchTools) handleClusterHealth(ctx context.Context) mcp.CallToolResult {
+	health, err := et.client.Health(ctx)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to get cluster health: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to get cluster health: %v", err))
 	}
 
-	response, err := json.MarshalIndent(health, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format cluster health: %v", err)), nil
-	}
-
-	return createSuccessResult(string(response), health), nil
+	return createSuccessResult("Cluster health retrieved successfully", health)
 }
 
-// Index management handlers
-
-func (t *ElasticsearchTools) handleIndexCreate(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleIndexCreate(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
+	// Build the request body
 	body := make(map[string]interface{})
-	if settings, ok := arguments["settings"].(map[string]interface{}); ok {
-		body["settings"] = settings
+	if settings, exists := args["settings"]; exists {
+		if settingsMap, ok := settings.(map[string]interface{}); ok {
+			body["settings"] = settingsMap
+		}
 	}
-	if mappings, ok := arguments["mappings"].(map[string]interface{}); ok {
-		body["mappings"] = mappings
+	if mappings, exists := args["mappings"]; exists {
+		if mappingsMap, ok := mappings.(map[string]interface{}); ok {
+			body["mappings"] = mappingsMap
+		}
 	}
 
-	err := t.client.CreateIndex(ctx, indexName, body)
+	err := et.client.CreateIndex(ctx, index, body)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to create index '%s': %v", indexName, err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to create index: %v", err))
 	}
 
-	return createSimpleSuccessResult(fmt.Sprintf("Successfully created index '%s'", indexName)), nil
+	return createSimpleSuccessResult(fmt.Sprintf("Index '%s' created successfully", index))
 }
 
-func (t *ElasticsearchTools) handleIndexDelete(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleIndexDelete(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	err := t.client.DeleteIndex(ctx, indexName)
+	err := et.client.DeleteIndex(ctx, index)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to delete index '%s': %v", indexName, err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to delete index: %v", err))
 	}
 
-	return createSimpleSuccessResult(fmt.Sprintf("Successfully deleted index '%s'", indexName)), nil
+	return createSimpleSuccessResult(fmt.Sprintf("Index '%s' deleted successfully", index))
 }
 
-func (t *ElasticsearchTools) handleIndexExists(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleIndexExists(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	exists, err := t.client.IndexExists(ctx, indexName)
+	exists, err := et.client.IndexExists(ctx, index)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to check if index '%s' exists: %v", indexName, err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to check index existence: %v", err))
 	}
 
 	result := map[string]interface{}{
-		"index":  indexName,
+		"index":  index,
 		"exists": exists,
 	}
 
-	return createSuccessResult(fmt.Sprintf("Index '%s' exists: %t", indexName, exists), result), nil
+	return createSuccessResult(fmt.Sprintf("Index '%s' exists: %t", index, exists), result)
 }
 
-func (t *ElasticsearchTools) handleIndexList(ctx context.Context) (*mcp.CallToolResult, error) {
-	indices, err := t.client.ListIndices(ctx)
+func (et *ElasticsearchTools) handleIndexList(ctx context.Context) mcp.CallToolResult {
+	indices, err := et.client.ListIndices(ctx)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to list indices: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to list indices: %v", err))
 	}
 
-	response, err := json.MarshalIndent(indices, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format indices list: %v", err)), nil
+	result := map[string]interface{}{
+		"indices": indices,
+		"count":   len(indices),
 	}
 
-	return createSuccessResult(string(response), indices), nil
+	return createSuccessResult(fmt.Sprintf("Found %d indices", len(indices)), result)
 }
 
-// Document management handlers
-
-func (t *ElasticsearchTools) handleDocumentIndex(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleDocumentIndex(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	document, ok := arguments["document"].(map[string]interface{})
+	body, ok := args["body"].(map[string]interface{})
 	if !ok {
-		return createErrorResult("Document is required and must be an object"), nil
+		return createErrorResult("Missing or invalid 'body' parameter")
 	}
 
-	docID, _ := arguments["id"].(string) // Optional
+	id, _ := args["id"].(string) // Optional parameter
 
-	response, err := t.client.Index(ctx, indexName, docID, document)
+	result, err := et.client.Index(ctx, index, id, body)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to index document: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to index document: %v", err))
 	}
 
-	responseData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format index response: %v", err)), nil
-	}
-
-	return createSuccessResult(string(responseData), response), nil
+	return createSuccessResult("Document indexed successfully", result)
 }
 
-func (t *ElasticsearchTools) handleDocumentGet(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleDocumentGet(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	docID, ok := arguments["id"].(string)
+	id, ok := args["id"].(string)
 	if !ok {
-		return createErrorResult("Document ID is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'id' parameter")
 	}
 
-	response, err := t.client.Get(ctx, indexName, docID)
+	result, err := et.client.Get(ctx, index, id)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to get document: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to get document: %v", err))
 	}
 
-	responseData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format get response: %v", err)), nil
-	}
-
-	return createSuccessResult(string(responseData), response), nil
+	return createSuccessResult("Document retrieved successfully", result)
 }
 
-func (t *ElasticsearchTools) handleDocumentUpdate(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleDocumentUpdate(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	docID, ok := arguments["id"].(string)
+	id, ok := args["id"].(string)
 	if !ok {
-		return createErrorResult("Document ID is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'id' parameter")
 	}
 
-	document, ok := arguments["document"].(map[string]interface{})
+	body, ok := args["body"].(map[string]interface{})
 	if !ok {
-		return createErrorResult("Document is required and must be an object"), nil
+		return createErrorResult("Missing or invalid 'body' parameter")
 	}
 
-	err := t.client.Update(ctx, indexName, docID, document)
+	err := et.client.Update(ctx, index, id, body)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to update document: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to update document: %v", err))
 	}
 
-	return createSimpleSuccessResult(fmt.Sprintf("Successfully updated document '%s' in index '%s'", docID, indexName)), nil
+	return createSimpleSuccessResult(fmt.Sprintf("Document '%s' updated successfully in index '%s'", id, index))
 }
 
-func (t *ElasticsearchTools) handleDocumentDelete(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	indexName, ok := arguments["index"].(string)
+func (et *ElasticsearchTools) handleDocumentDelete(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	index, ok := args["index"].(string)
 	if !ok {
-		return createErrorResult("Index name is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'index' parameter")
 	}
 
-	docID, ok := arguments["id"].(string)
+	id, ok := args["id"].(string)
 	if !ok {
-		return createErrorResult("Document ID is required and must be a string"), nil
+		return createErrorResult("Missing or invalid 'id' parameter")
 	}
 
-	err := t.client.Delete(ctx, indexName, docID)
+	err := et.client.Delete(ctx, index, id)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to delete document: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to delete document: %v", err))
 	}
 
-	return createSimpleSuccessResult(fmt.Sprintf("Successfully deleted document '%s' from index '%s'", docID, indexName)), nil
+	return createSimpleSuccessResult(fmt.Sprintf("Document '%s' deleted successfully from index '%s'", id, index))
 }
 
-// Search handlers
+func (et *ElasticsearchTools) handleSearch(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	// Index is optional for search
+	index, _ := args["index"].(string)
 
-func (t *ElasticsearchTools) handleSearch(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	query, ok := arguments["query"].(map[string]interface{})
-	if !ok {
-		return createErrorResult("Query is required and must be an object"), nil
+	// Default query if none provided (this should be the query content, not wrapped in "query")
+	query := map[string]interface{}{
+		"match_all": map[string]interface{}{},
 	}
-
-	searchReq := &elasticsearch.SearchRequest{
-		Query: query,
-	}
-
-	if index, ok := arguments["index"].(string); ok {
-		searchReq.Index = index
-	}
-
-	if size, ok := arguments["size"].(float64); ok {
-		searchReq.Size = int(size)
-	} else {
-		searchReq.Size = 10 // Default size
-	}
-
-	if from, ok := arguments["from"].(float64); ok {
-		searchReq.From = int(from)
-	}
-
-	response, err := t.client.Search(ctx, searchReq)
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to execute search: %v", err)), nil
-	}
-
-	responseData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format search response: %v", err)), nil
-	}
-
-	return createSuccessResult(string(responseData), response), nil
-}
-
-// Bulk operation handlers
-
-func (t *ElasticsearchTools) handleBulk(ctx context.Context, arguments map[string]interface{}) (*mcp.CallToolResult, error) {
-	operationsData, ok := arguments["operations"].([]interface{})
-	if !ok {
-		return createErrorResult("Operations array is required"), nil
-	}
-
-	var operations []elasticsearch.BulkOperation
-	for i, opData := range operationsData {
-		opMap, ok := opData.(map[string]interface{})
-		if !ok {
-			return createErrorResult(fmt.Sprintf("Operation %d must be an object", i)), nil
+	if q, exists := args["query"]; exists {
+		if queryMap, ok := q.(map[string]interface{}); ok {
+			query = queryMap
 		}
-
-		operation := elasticsearch.BulkOperation{}
-
-		if op, ok := opMap["operation"].(string); ok {
-			operation.Operation = op
-		} else {
-			return createErrorResult(fmt.Sprintf("Operation %d must have an 'operation' field", i)), nil
-		}
-
-		if index, ok := opMap["index"].(string); ok {
-			operation.Index = index
-		} else {
-			return createErrorResult(fmt.Sprintf("Operation %d must have an 'index' field", i)), nil
-		}
-
-		if id, ok := opMap["id"].(string); ok {
-			operation.ID = id
-		}
-
-		if body, ok := opMap["body"].(map[string]interface{}); ok {
-			operation.Body = body
-		}
-
-		operations = append(operations, operation)
 	}
 
-	response, err := t.client.Bulk(ctx, operations)
+	// Default size
+	size := 10
+	if s, exists := args["size"]; exists {
+		if sizeInt, ok := s.(float64); ok {
+			size = int(sizeInt)
+		}
+	}
+
+	// Default from
+	from := 0
+	if f, exists := args["from"]; exists {
+		if fromInt, ok := f.(int64); ok {
+			from = int(fromInt)
+		}
+	}
+
+	// Parse sort parameter
+	var sort []interface{}
+	if s, exists := args["sort"]; exists {
+		if sortArray, ok := s.([]interface{}); ok {
+			sort = sortArray
+		}
+	}
+
+	// Parse _source parameter
+	var source interface{}
+	if src, exists := args["_source"]; exists {
+		source = src
+	}
+
+	searchRequest := &elasticsearch.SearchRequest{
+		Index:  index,
+		Query:  query,
+		Size:   size,
+		From:   from,
+		Sort:   sort,
+		Source: source,
+	}
+
+	result, err := et.client.Search(ctx, searchRequest)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to execute bulk operations: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to execute search: %v", err))
 	}
 
-	responseData, err := json.MarshalIndent(response, "", "  ")
+	return createSuccessResult("Search executed successfully", result)
+}
+
+func (et *ElasticsearchTools) handleBulk(ctx context.Context, args map[string]interface{}) mcp.CallToolResult {
+	operations, ok := args["operations"].([]interface{})
+	if !ok {
+		return createErrorResult("Missing or invalid 'operations' parameter")
+	}
+
+	// Convert to BulkOperation slice
+	bulkOps := make([]elasticsearch.BulkOperation, len(operations))
+	for i, op := range operations {
+		if opMap, ok := op.(map[string]interface{}); ok {
+			// Convert the operation to the expected format
+			if opBytes, err := json.Marshal(opMap); err == nil {
+				var bulkOp elasticsearch.BulkOperation
+				if err := json.Unmarshal(opBytes, &bulkOp); err == nil {
+					bulkOps[i] = bulkOp
+				}
+			}
+		}
+	}
+
+	result, err := et.client.Bulk(ctx, bulkOps)
 	if err != nil {
-		return createErrorResult(fmt.Sprintf("Failed to format bulk response: %v", err)), nil
+		return createErrorResult(fmt.Sprintf("Failed to execute bulk operations: %v", err))
 	}
 
-	return createSuccessResult(string(responseData), response), nil
+	return createSuccessResult("Bulk operations executed successfully", result)
 }

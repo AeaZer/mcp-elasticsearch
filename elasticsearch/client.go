@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/AeaZer/mcp-elasticsearch/config"
@@ -397,13 +398,40 @@ func (c *ESClient) Update(ctx context.Context, index, docID string, body map[str
 //   - *SearchResponse: Search results with hits and metadata
 //   - error: Any error that occurred during search
 func (c *ESClient) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
-	bodyBytes, err := json.Marshal(req.Query)
+	// Build complete search request body
+	searchBody := make(map[string]interface{})
+
+	// Add query
+	if req.Query != nil {
+		searchBody["query"] = req.Query
+	}
+
+	// Add sort if provided
+	if req.Sort != nil && len(req.Sort) > 0 {
+		searchBody["sort"] = req.Sort
+	}
+
+	// Add _source if provided
+	if req.Source != nil {
+		searchBody["_source"] = req.Source
+	}
+
+	bodyBytes, err := json.Marshal(searchBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize search query: %w", err)
+		return nil, fmt.Errorf("failed to serialize search request: %w", err)
+	}
+
+	// Debug: log the actual request body being sent to Elasticsearch
+	log.Printf("Elasticsearch search request body: %s", string(bodyBytes))
+
+	// Handle index parameter (can be empty for searching all indices)
+	var indices []string
+	if req.Index != "" {
+		indices = []string{req.Index}
 	}
 
 	esReq := esapi.SearchRequest{
-		Index: []string{req.Index},
+		Index: indices,
 		Body:  &bodyReader{data: bodyBytes},
 		Size:  &req.Size,
 		From:  &req.From,

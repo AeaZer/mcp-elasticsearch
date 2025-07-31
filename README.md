@@ -4,15 +4,16 @@
 
 ## Overview
 
-An Elasticsearch MCP (Model Context Protocol) server built on [github.com/mark3labs/mcp-go](https://github.com/mark3labs/mcp-go), providing seamless integration with Elasticsearch 7, 8, and 9 versions.
+An Elasticsearch MCP (Model Context Protocol) server built on [github.com/modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk), providing seamless integration with Elasticsearch 7, 8, and 9 versions.
 
 ## Features
 
-- 🔗 **Multi-Protocol Support**: Supports both stdio and Streamable HTTP protocols
+- 🔗 **Multi-Protocol Support**: Supports stdio, Streamable HTTP, and SSE protocols (SSE deprecated)
 - 📊 **Multi-Version Compatibility**: Compatible with Elasticsearch 7, 8, and 9
 - ⚙️ **Environment Configuration**: Configure via environment variables
 - 🔧 **Rich Toolset**: Complete set of Elasticsearch operation tools
 - 🌐 **Production Ready**: Docker support with optimized builds
+- 🐳 **Container Ready**: Pre-built Docker images available
 
 ## Supported Tools
 
@@ -33,7 +34,9 @@ An Elasticsearch MCP (Model Context Protocol) server built on [github.com/mark3l
 - `es_document_delete`: Delete documents by ID
 
 ### Search Operations
-- `es_search`: Execute search queries with filters and sorting
+- `es_search`: Execute search queries with filters, sorting, and field selection
+  - Supports: `index`, `query`, `size`, `from`, `sort`, `_source`
+  - Full Elasticsearch Query DSL support
 
 ### Bulk Operations
 - `es_bulk`: Execute multiple operations in a single request
@@ -42,7 +45,31 @@ An Elasticsearch MCP (Model Context Protocol) server built on [github.com/mark3l
 
 Choose one of the following methods to run the Elasticsearch MCP server:
 
-### Method 1: Build Docker Image (Recommended)
+### Method 1: Use Pre-built Docker Image (Recommended)
+
+```bash
+# Basic usage with local Elasticsearch
+docker run --rm \
+  -e ES_ADDRESSES=http://localhost:9200 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+
+# HTTP mode for remote access
+docker run -d -p 8080:8080 \
+  -e MCP_PROTOCOL=http \
+  -e ES_ADDRESSES=http://your-elasticsearch:9200 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+
+# With authentication
+docker run -d -p 8080:8080 \
+  -e MCP_PROTOCOL=http \
+  -e ES_ADDRESSES=https://your-elasticsearch:9200 \
+  -e ES_USERNAME=elastic \
+  -e ES_PASSWORD=your-password \
+  -e ES_SSL=true \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+### Method 2: Build Docker Image
 
 ```bash
 # Clone the repository
@@ -55,15 +82,6 @@ docker build -t mcp-elasticsearch .
 # Run the container
 docker run -e ES_ADDRESSES=http://localhost:9200 -e ES_VERSION=8 mcp-elasticsearch
 ```
-
-### Method 2: Use Pre-built Image (Coming Soon)
-
-```bash
-# This will be available when the image is published to a registry
-# docker run -e ES_ADDRESSES=http://localhost:9200 ghcr.io/aeazer/mcp-elasticsearch:latest
-```
-
-*Note: Pre-built images are not yet available. Please use Method 1 or Method 3.*
 
 ### Method 3: Compile from Source
 
@@ -82,6 +100,67 @@ export ES_VERSION=8
 export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
+
+## Docker Usage Examples
+
+### Basic Stdio Mode (for LLM tool integration)
+```bash
+docker run -it --rm \
+  -e ES_ADDRESSES=http://host.docker.internal:9200 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+### HTTP Server Mode (for n8n, API access)
+```bash
+docker run -d -p 8080:8080 \
+  --name mcp-elasticsearch \
+  -e MCP_PROTOCOL=http \
+  -e ES_ADDRESSES=http://host.docker.internal:9200 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+
+# Test the server endpoints
+curl http://localhost:8080/health    # Health check
+curl http://localhost:8080/mcp       # MCP endpoint (requires proper MCP client)
+```
+
+### With Elastic Cloud
+```bash
+docker run -d -p 8080:8080 \
+  -e MCP_PROTOCOL=http \
+  -e ES_CLOUD_ID="your-cloud-id" \
+  -e ES_USERNAME=elastic \
+  -e ES_PASSWORD="your-password" \
+  -e ES_VERSION=8 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+### Using Docker Compose
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+services:
+  mcp-elasticsearch:
+    image: ghcr.io/aeazer/mcp-elasticsearch:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - MCP_PROTOCOL=http
+      - ES_ADDRESSES=http://elasticsearch:9200
+      - ES_VERSION=8
+    depends_on:
+      - elasticsearch
+    
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+```
+
+Run with: `docker-compose up -d`
 
 ## Configuration
 
@@ -108,23 +187,54 @@ All configuration is done via environment variables:
 |----------|-------------|---------|
 | `MCP_SERVER_NAME` | Server name for MCP | `Elasticsearch MCP Server` |
 | `MCP_SERVER_VERSION` | Server version | `1.0.0` |
-| `MCP_PROTOCOL` | Protocol to use (`stdio` or `http`) | `stdio` |
-| `MCP_ADDRESS` | Streamable HTTP server address (HTTP mode only) | `localhost` |
+| `MCP_PROTOCOL` | Protocol to use (`stdio`, `http`, or `sse` - deprecated) | `http` (in Docker), `stdio` (native) |
+| `MCP_ADDRESS` | Streamable HTTP server address (HTTP mode only) | `0.0.0.0` (in Docker), `localhost` (native) |
 | `MCP_PORT` | Streamable HTTP server port (HTTP mode only) | `8080` |
+
+### Protocol Endpoints
+
+Different protocols use different access methods:
+
+#### Stdio Protocol
+- **Access method**: Direct stdin/stdout communication
+- **Use case**: LLM tool integration (Claude Desktop, etc.)
+- **Endpoint**: N/A (direct process communication)
+
+#### Streamable HTTP Protocol (Recommended)
+- **MCP endpoint**: `http://host:port/mcp`
+- **Health check**: `http://host:port/health`
+- **Use case**: Remote access, n8n integration, API usage
+- **Example**: `http://localhost:8080/mcp`
+
+#### SSE Protocol (Deprecated)
+- **MCP endpoint**: `http://host:port/sse`  
+- **Use case**: Legacy SSE clients (not recommended)
+- **Example**: `http://localhost:8080/sse`
+- ⚠️ **Warning**: Deprecated, use HTTP protocol instead
 
 ## Usage Examples
 
-### Stdio Mode (Default)
+### Stdio Mode (Default for native builds)
 ```bash
 export ES_ADDRESSES=http://localhost:9200
 export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
 
-### Streamable HTTP Mode
+### Streamable HTTP Mode (Default for Docker)
 ```bash
 export ES_ADDRESSES=http://localhost:9200
 export MCP_PROTOCOL=http
+export MCP_PORT=8080
+./mcp-elasticsearch
+```
+
+### SSE Mode (Deprecated - Not Recommended)
+⚠️ **WARNING**: SSE protocol is deprecated and not recommended for production use. Use Streamable HTTP instead.
+
+```bash
+export ES_ADDRESSES=http://localhost:9200
+export MCP_PROTOCOL=sse
 export MCP_PORT=8080
 ./mcp-elasticsearch
 ```
@@ -138,12 +248,12 @@ export ES_VERSION=8
 ./mcp-elasticsearch
 ```
 
-
 ## Development
 
 ### Prerequisites
-- Go 1.21 or higher
+- Go 1.23 or higher
 - Access to an Elasticsearch cluster
+- Docker (optional, for containerized development)
 
 ### Building
 ```bash
@@ -154,6 +264,11 @@ go build -o mcp-elasticsearch main.go
 ### Testing
 ```bash
 go test ./...
+```
+
+### Building Docker Image
+```bash
+docker build -t mcp-elasticsearch .
 ```
 
 ## Tool Usage Examples
@@ -193,7 +308,7 @@ go test ./...
   "arguments": {
     "index": "my-index",
     "id": "doc1",
-    "document": {
+    "body": {
       "title": "Hello World",
       "content": "This is a test document",
       "timestamp": "2024-01-01T00:00:00Z"
@@ -202,25 +317,73 @@ go test ./...
 }
 ```
 
-### Search Documents
+### Advanced Search with Sorting and Field Selection
 ```json
 {
   "tool": "es_search",
   "arguments": {
     "index": "my-index",
     "query": {
-      "match": {
-        "title": "Hello"
+      "bool": {
+        "must": [
+          {"match": {"title": "Hello"}}
+        ],
+        "filter": [
+          {"range": {"timestamp": {"gte": "2024-01-01"}}}
+        ]
       }
     },
-    "size": 10
+    "sort": [
+      {"timestamp": {"order": "desc"}},
+      {"_score": {"order": "desc"}}
+    ],
+    "_source": ["title", "content", "timestamp"],
+    "size": 20,
+    "from": 0
   }
 }
 ```
 
+## Health Monitoring
+
+When running in HTTP mode, the server provides multiple endpoints:
+
+### Health Check Endpoint
+```bash
+# Check server health (publicly accessible)
+curl http://localhost:8080/health
+
+# Response
+{"status":"healthy","server":"elasticsearch-mcp"}
+```
+
+### MCP Protocol Endpoint
+```bash
+# MCP communication endpoint (requires MCP client)
+# URL: http://localhost:8080/mcp
+# This endpoint handles MCP protocol messages and tool calls
+# Not directly accessible via simple HTTP GET requests
+```
+
+### Important Notes
+- **Health endpoint** (`/health`): Simple HTTP GET for monitoring
+- **MCP endpoint** (`/mcp`): For MCP protocol communication only
+- **SSE endpoint** (`/sse`): Deprecated, avoid using
+
 ## Error Handling
 
 All errors are reported within the MCP tool results with `isError: true`, allowing LLMs to see and handle errors appropriately. Protocol-level errors are reserved for exceptional conditions like missing tools or server failures.
+
+## Troubleshooting
+
+### Container Issues
+- **Container exits immediately**: Ensure you're using HTTP protocol for Docker containers
+- **Cannot connect to Elasticsearch**: Use `host.docker.internal:9200` instead of `localhost:9200` in Docker
+- **Permission denied**: Check Docker daemon permissions and image access
+
+### Network Issues
+- **Connection refused**: Verify Elasticsearch is running and accessible
+- **SSL errors**: Set `ES_INSECURE_SKIP_VERIFY=true` for testing with self-signed certificates
 
 ## Contributing
 
@@ -234,9 +397,12 @@ All errors are reported within the MCP tool results with `isError: true`, allowi
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-
 ## Acknowledgments
 
-- [Mark3Labs MCP-Go](https://github.com/mark3labs/mcp-go) - MCP implementation for Go
+- [Official MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) - Official MCP implementation for Go
 - [Elastic](https://github.com/elastic/go-elasticsearch) - Official Elasticsearch Go client
-- [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol specification 
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol specification
+
+<div align="center">
+  <sub>Built with ❤️ for the Go community</sub>
+</div>

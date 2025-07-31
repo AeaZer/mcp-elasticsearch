@@ -4,7 +4,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,8 +11,7 @@ import (
 	"github.com/AeaZer/mcp-elasticsearch/config"
 	"github.com/AeaZer/mcp-elasticsearch/elasticsearch"
 	"github.com/AeaZer/mcp-elasticsearch/tools"
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // ElasticsearchMCPServer represents the main MCP server for Elasticsearch operations
@@ -21,7 +19,7 @@ type ElasticsearchMCPServer struct {
 	config    *config.Config            // Server configuration
 	esClient  elasticsearch.Client      // Elasticsearch client instance
 	esTools   *tools.ElasticsearchTools // Elasticsearch tools collection
-	mcpServer *server.MCPServer         // Underlying MCP server
+	mcpServer *mcp.Server               // Underlying MCP server
 }
 
 // NewElasticsearchMCPServer creates a new instance of the Elasticsearch MCP server
@@ -31,23 +29,29 @@ func NewElasticsearchMCPServer(cfg *config.Config) (*ElasticsearchMCPServer, err
 	// Create Elasticsearch client with the provided configuration
 	esClient, err := elasticsearch.NewClient(&cfg.Elasticsearch, cfg.GetElasticsearchVersion())
 	if err != nil {
+		log.Printf("ERROR: Failed to connect to Elasticsearch: %v", err)
 		return nil, fmt.Errorf("failed to create Elasticsearch client: %w", err)
 	}
+	log.Printf("Connected to Elasticsearch")
 
 	// Create the tools collection with the Elasticsearch client
 	esTools := tools.NewElasticsearchTools(esClient)
 
-	// Create the MCP server with tool capabilities enabled
-	mcpServer := server.NewMCPServer(
-		cfg.Server.Name,
-		cfg.Server.Version,
-		server.WithToolCapabilities(true),
-	)
+	// Create the MCP server
+	impl := &mcp.Implementation{
+		Name:    cfg.Server.Name,
+		Version: cfg.Server.Version,
+	}
+	mcpServer := mcp.NewServer(impl, &mcp.ServerOptions{
+		Instructions: "Elasticsearch MCP Server - provides tools for interacting with Elasticsearch clusters",
+	})
 
 	// Register all Elasticsearch tools with the MCP server
-	if err := registerTools(mcpServer, esTools); err != nil {
+	if err = registerTools(mcpServer, esTools); err != nil {
+		log.Printf("ERROR: Failed to register tools: %v", err)
 		return nil, fmt.Errorf("failed to register tools: %w", err)
 	}
+	log.Printf("Registered %d tools", len(esTools.GetTools()))
 
 	return &ElasticsearchMCPServer{
 		config:    cfg,
@@ -59,21 +63,34 @@ func NewElasticsearchMCPServer(cfg *config.Config) (*ElasticsearchMCPServer, err
 
 // registerTools registers all Elasticsearch tools with the MCP server.
 // Each tool is registered with its corresponding handler function.
-func registerTools(mcpServer *server.MCPServer, esTools *tools.ElasticsearchTools) error {
+func registerTools(mcpServer *mcp.Server, esTools *tools.ElasticsearchTools) error {
 	toolsList := esTools.GetTools()
 
+	// Create tool handlers for each tool
 	for _, tool := range toolsList {
 		// Create a closure to capture the tool name for the handler
 		toolName := tool.Name
-		mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			return esTools.HandleTool(ctx, toolName, request.GetArguments())
-		})
+
+		handler := func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[map[string]any]) (*mcp.CallToolResult, error) {
+			log.Printf("Tool call: %s", toolName)
+
+			result := esTools.HandleTool(ctx, toolName, params.Arguments)
+
+			if result.IsError {
+				log.Printf("Tool %s failed", toolName)
+			}
+
+			return &result, nil
+		}
+
+		// Add tool to the server
+		mcpServer.AddTool(&tool, handler)
 	}
 
 	return nil
 }
 
-// Start launches the MCP server using the configured protocol (stdio or http).
+// Start launches the MCP server using the configured protocol (stdio, http, or sse).
 // The method blocks until the server is stopped or encounters an error.
 func (s *ElasticsearchMCPServer) Start() error {
 	switch s.config.Server.Protocol {
@@ -81,55 +98,100 @@ func (s *ElasticsearchMCPServer) Start() error {
 		return s.startStdioServer()
 	case "http":
 		return s.startStreamableHTTP()
+	case "sse":
+		log.Printf("WARNING: SSE protocol is deprecated")
+		return s.startSSEServer()
 	default:
-		return fmt.Errorf("unsupported protocol: %s", s.config.Server.Protocol)
+		err := fmt.Errorf("unsupported protocol: %s", s.config.Server.Protocol)
+		log.Printf("ERROR: %v", err)
+		return err
 	}
 }
 
 // startStdioServer starts the MCP server using the stdio protocol.
-// This method blocks until the server is stopped.
+// This mode is typically used for direct integration with LLM tools.
 func (s *ElasticsearchMCPServer) startStdioServer() error {
-	log.Printf("Starting Elasticsearch MCP Server (stdio protocol)")
+	log.Printf("Starting MCP server on stdio")
 
-	// Start the server using stdio protocol
-	if err := server.ServeStdio(s.mcpServer); err != nil {
-		return fmt.Errorf("stdio server failed to start: %w", err)
+	// Create stdio transport
+	transport := mcp.NewStdioTransport()
+
+	// Run the server
+	err := s.mcpServer.Run(context.Background(), transport)
+	if err != nil {
+		log.Printf("ERROR: Stdio server failed: %v", err)
 	}
-
-	return nil
+	return err
 }
 
-// startStreamableHTTP starts the MCP server using the HTTP protocol.
-// This method blocks until the server is stopped.
+// startStreamableHTTP starts the MCP server using the Streamable HTTP protocol.
+// This mode allows the server to be accessed over HTTP for remote connections.
 func (s *ElasticsearchMCPServer) startStreamableHTTP() error {
 	address := fmt.Sprintf("%s:%d", s.config.Server.Address, s.config.Server.Port)
-	log.Printf("Starting Elasticsearch MCP Server (HTTP protocol) listening on: %s", address)
 
-	// Create HTTP handler for the MCP server
-	handler := server.NewStreamableHTTPServer(s.mcpServer)
+	// Create HTTP handler
+	mcpHandler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
+		log.Printf("MCP request from %s", r.RemoteAddr)
+		return s.mcpServer
+	}, nil)
 
-	// Create and configure the HTTP server
-	httpServer := &http.Server{
-		Addr:    address,
-		Handler: handler,
+	// Wrap handler with error logging
+	loggingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Call the actual MCP handler
+		mcpHandler.ServeHTTP(w, r)
+	})
+
+	// Start HTTP server
+	http.Handle("/mcp", loggingHandler)
+
+	// Add health check endpoint
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy","server":"elasticsearch-mcp"}`))
+	})
+
+	log.Printf("HTTP server listening on %s", address)
+
+	err := http.ListenAndServe(address, nil)
+	if err != nil {
+		log.Printf("ERROR: HTTP server failed: %v", err)
 	}
-
-	// Start the HTTP server
-	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("HTTP server failed to start: %w", err)
-	}
-
-	return nil
+	return err
 }
 
-// Stop gracefully shuts down the MCP server and closes the Elasticsearch client.
-// It ensures all resources are properly cleaned up.
-func (s *ElasticsearchMCPServer) Stop() error {
-	log.Printf("Stopping Elasticsearch MCP Server")
+// startSSEServer starts the MCP server using the SSE (Server-Sent Events) protocol.
+// WARNING: This protocol is deprecated and not recommended for production use.
+func (s *ElasticsearchMCPServer) startSSEServer() error {
+	address := fmt.Sprintf("%s:%d", s.config.Server.Address, s.config.Server.Port)
 
-	// Close the Elasticsearch client connection
-	if err := s.esClient.Close(); err != nil {
-		log.Printf("Failed to close Elasticsearch client: %v", err)
+	// Create SSE handler
+	sseHandler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server {
+		log.Printf("SSE request from %s", r.RemoteAddr)
+		return s.mcpServer
+	})
+
+	// Start HTTP server with SSE endpoints
+	http.Handle("/sse", sseHandler)
+
+	log.Printf("SSE server listening on %s", address)
+
+	err := http.ListenAndServe(address, nil)
+	if err != nil {
+		log.Printf("ERROR: SSE server failed: %v", err)
+	}
+	return err
+}
+
+// Stop gracefully shuts down the MCP server and cleans up resources.
+func (s *ElasticsearchMCPServer) Stop() error {
+	// Close Elasticsearch client connection
+	if s.esClient != nil {
+		err := s.esClient.Close()
+		if err != nil {
+			log.Printf("ERROR: Failed to close Elasticsearch client: %v", err)
+			return err
+		}
 	}
 
 	return nil

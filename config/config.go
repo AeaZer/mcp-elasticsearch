@@ -57,7 +57,8 @@ type ServerConfig struct {
 	// Version of the MCP server
 	Version string `mapstructure:"version"`
 
-	// Protocol specifies the communication protocol (stdio or http)
+	// Protocol specifies the communication protocol (stdio, http, or sse)
+	// Note: SSE protocol is deprecated and not recommended for production use
 	Protocol string `mapstructure:"protocol"`
 
 	// Address for HTTP server (only used when protocol is http)
@@ -71,7 +72,7 @@ type ServerConfig struct {
 func LoadConfig() (*Config, error) {
 	config := &Config{
 		Elasticsearch: ElasticsearchConfig{
-			Addresses:          getEnvStringSlice("ES_ADDRESSES", []string{"http://localhost:9200"}),
+			Addresses:          getEnvStringSlice("ES_ADDRESSES", []string{"http://127.0.0.1:9200"}),
 			Username:           getEnvString("ES_USERNAME", ""),
 			Password:           getEnvString("ES_PASSWORD", ""),
 			APIKey:             getEnvString("ES_API_KEY", ""),
@@ -104,12 +105,12 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("at least one Elasticsearch address must be specified")
 	}
 
-	if c.Server.Protocol != "stdio" && c.Server.Protocol != "http" {
-		return fmt.Errorf("unsupported protocol: %s, supported protocols: stdio, http", c.Server.Protocol)
+	if c.Server.Protocol != "stdio" && c.Server.Protocol != "http" && c.Server.Protocol != "sse" {
+		return fmt.Errorf("unsupported protocol: %s, supported protocols: stdio, http, sse (deprecated)", c.Server.Protocol)
 	}
 
-	if c.Server.Protocol == "http" && c.Server.Port <= 0 {
-		return fmt.Errorf("valid port number is required for HTTP protocol")
+	if (c.Server.Protocol == "http" || c.Server.Protocol == "sse") && c.Server.Port <= 0 {
+		return fmt.Errorf("valid port number is required for HTTP/SSE protocol")
 	}
 
 	return nil

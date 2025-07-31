@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/AeaZer/mcp-elasticsearch/config"
 	"github.com/AeaZer/mcp-elasticsearch/server"
@@ -17,22 +18,25 @@ func main() {
 	// Configure logging format with timestamp and file location
 	log.SetFlags(log.Ldate | log.Ltime | log.LstdFlags)
 
+	log.Printf("Starting Elasticsearch MCP Server...")
+
 	// Load configuration from environment variables
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Fatalf("FATAL: Failed to load configuration: %v", err)
 	}
 
-	// Log startup information
-	log.Printf("Starting Elasticsearch MCP Server...")
+	// Log essential startup information
 	log.Printf("Protocol: %s", cfg.Server.Protocol)
-	log.Printf("Elasticsearch addresses: %v", cfg.Elasticsearch.Addresses)
-	log.Printf("Elasticsearch version: %s", cfg.GetElasticsearchVersion())
+	if cfg.Server.Protocol == "http" || cfg.Server.Protocol == "sse" {
+		log.Printf("Listen Address: %s:%d", cfg.Server.Address, cfg.Server.Port)
+	}
+	log.Printf("Elasticsearch: %v", cfg.Elasticsearch.Addresses)
 
 	// Create the Elasticsearch MCP server instance
 	mcpServer, err := server.NewElasticsearchMCPServer(cfg)
 	if err != nil {
-		log.Fatalf("Failed to create MCP server: %v", err)
+		log.Fatalf("FATAL: Failed to create MCP server: %v", err)
 	}
 
 	// Set up signal handling for graceful shutdown
@@ -44,14 +48,26 @@ func main() {
 	go func() {
 		defer close(serverErrChan)
 		if err := mcpServer.Start(); err != nil {
+			log.Printf("ERROR: Server failed: %v", err)
 			serverErrChan <- err
 		}
 	}()
 
+	// Give the server a moment to start
+	time.Sleep(1 * time.Second)
+
+	if cfg.Server.Protocol == "http" || cfg.Server.Protocol == "sse" {
+		endpoint := "mcp"
+		if cfg.Server.Protocol == "sse" {
+			endpoint = "sse"
+		}
+		log.Printf("MCP Server running at: http://%s:%d/%s", cfg.Server.Address, cfg.Server.Port, endpoint)
+	}
+
 	// Wait for either a signal or server error
 	select {
 	case sig := <-sigChan:
-		log.Printf("Received signal: %v, shutting down server...", sig)
+		log.Printf("Received signal: %v, shutting down...", sig)
 	case err := <-serverErrChan:
 		if err != nil {
 			log.Printf("Server error: %v", err)
@@ -60,8 +76,8 @@ func main() {
 
 	// Gracefully shutdown the server
 	if err := mcpServer.Stop(); err != nil {
-		log.Printf("Error during server shutdown: %v", err)
+		log.Printf("ERROR during shutdown: %v", err)
 	}
 
-	log.Printf("Server stopped successfully")
+	log.Printf("Server stopped")
 }
