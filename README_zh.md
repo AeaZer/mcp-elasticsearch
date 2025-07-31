@@ -101,6 +101,136 @@ export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
 
+### 方式四：桌面应用集成（Cursor、Claude Desktop 等）
+
+对于支持 MCP 的桌面应用，您可以通过配置文件来配置服务器：
+
+#### 步骤 1：构建或安装可执行文件
+
+首先，确保您有 `mcp-elasticsearch` 可执行文件：
+
+```bash
+# 选项 A：直接从 GitHub 安装（推荐）
+go install github.com/AeaZer/mcp-elasticsearch@latest
+
+# 选项 B：从源码构建
+git clone https://github.com/AeaZer/mcp-elasticsearch.git
+cd mcp-elasticsearch
+go mod download
+go build -o mcp-elasticsearch main.go
+
+# 选项 C：下载预编译文件（仅限 Windows）
+# 从 GitHub Releases 下载 mcp-elasticsearch.exe
+# macOS 和 Linux 用户请使用选项 A 或 B
+```
+
+> **注意**: Docker 不适合桌面应用集成，因为在此场景下无法正确支持 stdio 模式。请使用原生可执行文件。
+
+#### 步骤 2：使可执行文件可用
+
+如果您使用了 `go install`（选项 A），可执行文件会自动安装到 `$GOPATH/bin` 或 `$GOBIN` 目录，这些目录通常已经在 PATH 环境变量中。
+
+如果您从源码构建（选项 B）或下载了预编译文件（选项 C），请确保 `mcp-elasticsearch` 可执行文件在系统 PATH 环境变量中，或在配置中使用完整路径。
+
+#### 步骤 3：创建 MCP 配置
+
+为您的桌面应用创建或修改 MCP 配置文件：
+
+**Cursor：** 创建或编辑 `~/.cursor/mcp.json` (Linux/Mac) 或 `%APPDATA%\Cursor\User\mcp.json` (Windows)
+
+**Claude Desktop：** 在适合您平台的位置创建或编辑配置。
+
+#### 配置示例
+
+**基本配置：**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "http://localhost:9200",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**带认证：**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "https://your-elasticsearch.com:9200",
+        "ES_USERNAME": "elastic",
+        "ES_PASSWORD": "your-password",
+        "ES_VERSION": "8",
+        "ES_SSL": "true"
+      }
+    }
+  }
+}
+```
+
+**使用 API Key：**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "https://your-elasticsearch.com:9200",
+        "ES_API_KEY": "your-api-key",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**Elastic Cloud 配置：**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_CLOUD_ID": "your-cloud-id",
+        "ES_USERNAME": "elastic",
+        "ES_PASSWORD": "your-password",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**使用完整路径（如果不在 PATH 中）：**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "/full/path/to/mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "http://localhost:9200",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+#### 步骤 4：重启桌面应用
+
+创建或修改配置文件后，重启您的桌面应用以加载新的 MCP 服务器配置。
+
+#### 验证
+
+配置完成后，您应该能在桌面应用中看到 Elasticsearch 工具和资源。可用的工具包括上述"支持的工具"部分列出的集群操作、索引管理、文档操作、搜索功能和批量操作。
+
 ## Docker 使用示例
 
 ### 基本 Stdio 模式（用于 LLM 工具集成）

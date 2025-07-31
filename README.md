@@ -101,6 +101,136 @@ export MCP_PROTOCOL=stdio
 ./mcp-elasticsearch
 ```
 
+### Method 4: Desktop Application Integration (Cursor, Claude Desktop, etc.)
+
+For integration with desktop applications that support MCP, you can configure the server through a configuration file:
+
+#### Step 1: Build or Install the Executable
+
+First, ensure you have the `mcp-elasticsearch` executable available:
+
+```bash
+# Option A: Install directly from GitHub (Recommended)
+go install github.com/AeaZer/mcp-elasticsearch@latest
+
+# Option B: Build from source
+git clone https://github.com/AeaZer/mcp-elasticsearch.git
+cd mcp-elasticsearch
+go mod download
+go build -o mcp-elasticsearch main.go
+
+# Option C: Download pre-built binary (Windows only)
+# Download mcp-elasticsearch.exe from GitHub Releases
+# macOS and Linux users should use Option A or B
+```
+
+> **Note**: Docker is not suitable for desktop application integration as it doesn't support stdio mode properly in this context. Use native executables instead.
+
+#### Step 2: Make Executable Available
+
+If you used `go install` (Option A), the executable is automatically placed in `$GOPATH/bin` or `$GOBIN`, which is typically already in your PATH environment variable.
+
+If you built from source (Option B) or downloaded the pre-built binary (Option C), ensure the `mcp-elasticsearch` executable is in your system PATH environment variable, or use the full path in your configuration.
+
+#### Step 3: Create MCP Configuration
+
+Create or modify the MCP configuration file for your desktop application:
+
+**Cursor:** Create or edit `~/.cursor/mcp.json` (Linux/Mac) or `%APPDATA%\Cursor\User\mcp.json` (Windows)
+
+**Claude Desktop:** Create or edit configuration in the appropriate location for your platform.
+
+#### Configuration Examples
+
+**Basic Configuration:**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "http://localhost:9200",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**With Authentication:**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "https://your-elasticsearch.com:9200",
+        "ES_USERNAME": "elastic",
+        "ES_PASSWORD": "your-password",
+        "ES_VERSION": "8",
+        "ES_SSL": "true"
+      }
+    }
+  }
+}
+```
+
+**With API Key:**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "https://your-elasticsearch.com:9200",
+        "ES_API_KEY": "your-api-key",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**Elastic Cloud Configuration:**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "mcp-elasticsearch",
+      "env": {
+        "ES_CLOUD_ID": "your-cloud-id",
+        "ES_USERNAME": "elastic",
+        "ES_PASSWORD": "your-password",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+**Using Full Path (if not in PATH):**
+```json
+{
+  "mcpServers": {
+    "elasticsearch": {
+      "command": "/full/path/to/mcp-elasticsearch",
+      "env": {
+        "ES_ADDRESSES": "http://localhost:9200",
+        "ES_VERSION": "8"
+      }
+    }
+  }
+}
+```
+
+#### Step 4: Restart Desktop Application
+
+After creating or modifying the configuration file, restart your desktop application to load the new MCP server configuration.
+
+#### Verification
+
+Once configured, you should see Elasticsearch tools and resources available in your desktop application. The available tools include cluster operations, index management, document operations, search capabilities, and bulk operations as listed in the "Supported Tools" section above.
+
 ## Docker Usage Examples
 
 ### Basic Stdio Mode (for LLM tool integration)
