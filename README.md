@@ -233,14 +233,7 @@ Once configured, you should see Elasticsearch tools and resources available in y
 
 ## Docker Usage Examples
 
-### Basic Stdio Mode (for LLM tool integration)
-```bash
-docker run -it --rm \
-  -e ES_ADDRESSES=http://host.docker.internal:9200 \
-  ghcr.io/aeazer/mcp-elasticsearch:latest
-```
-
-### HTTP Server Mode (for n8n, API access)
+### HTTP Server Mode (Recommended)
 ```bash
 docker run -d -p 8080:8080 \
   --name mcp-elasticsearch \
@@ -262,6 +255,21 @@ docker run -d -p 8080:8080 \
   -e ES_PASSWORD="your-password" \
   -e ES_VERSION=8 \
   ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+### SSE Server Mode (Not Recommended - Deprecated)
+⚠️ **WARNING**: SSE protocol is deprecated and not recommended for production use. Use HTTP mode instead.
+
+```bash
+docker run -d -p 8080:8080 \
+  --name mcp-elasticsearch-sse \
+  -e MCP_PROTOCOL=sse \
+  -e ES_ADDRESSES=http://host.docker.internal:9200 \
+  -e ES_VERSION=8 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+
+# SSE endpoint (deprecated)
+curl http://localhost:8080/sse
 ```
 
 ### Using Docker Compose

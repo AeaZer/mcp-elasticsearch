@@ -233,14 +233,7 @@ go build -o mcp-elasticsearch main.go
 
 ## Docker 使用示例
 
-### 基本 Stdio 模式（用于 LLM 工具集成）
-```bash
-docker run -it --rm \
-  -e ES_ADDRESSES=http://host.docker.internal:9200 \
-  ghcr.io/aeazer/mcp-elasticsearch:latest
-```
-
-### HTTP 服务器模式（用于 n8n、API 访问）
+### HTTP 服务器模式（推荐）
 ```bash
 docker run -d -p 8080:8080 \
   --name mcp-elasticsearch \
@@ -262,6 +255,21 @@ docker run -d -p 8080:8080 \
   -e ES_PASSWORD="your-password" \
   -e ES_VERSION=8 \
   ghcr.io/aeazer/mcp-elasticsearch:latest
+```
+
+### SSE 服务器模式（不建议使用 - 已弃用）
+⚠️ **警告**: SSE 协议已弃用，不建议在生产环境中使用。请使用 HTTP 模式。
+
+```bash
+docker run -d -p 8080:8080 \
+  --name mcp-elasticsearch-sse \
+  -e MCP_PROTOCOL=sse \
+  -e ES_ADDRESSES=http://host.docker.internal:9200 \
+  -e ES_VERSION=8 \
+  ghcr.io/aeazer/mcp-elasticsearch:latest
+
+# SSE 端点（已弃用）
+curl http://localhost:8080/sse
 ```
 
 ### 使用 Docker Compose
